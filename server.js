@@ -3,6 +3,7 @@ const cors = require('cors');
 const dotenv = require('dotenv');
 const path = require('path');
 const connectDB = require('./config/db');
+const { specs, swaggerUi } = require('./config/swagger');
 
 // Charger les variables d'environnement
 dotenv.config();
@@ -26,10 +27,49 @@ app.use((req, res, next) => {
   next();
 });
 
+// Configuration Swagger UI
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs, {
+  customSiteTitle: 'API Exam Documentation',
+  customCssUrl: 'https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/4.15.5/swagger-ui.min.css',
+  swaggerOptions: {
+    persistAuthorization: true,
+    displayRequestDuration: true,
+    filter: true,
+    showExtensions: true,
+    showCommonExtensions: true,
+    tryItOutEnabled: true
+  }
+}));
+
 // Routes
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/products', require('./routes/products'));
 
+/**
+ * @swagger
+ * /:
+ *   get:
+ *     summary: Informations sur l'API
+ *     description: Retourne les informations générales et la liste des endpoints disponibles
+ *     tags: [Informations]
+ *     responses:
+ *       200:
+ *         description: Informations sur l'API
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: API Node.js pour l'authentification et gestion de produits avec upload d'images
+ *                 version:
+ *                   type: string
+ *                   example: "1.0.0"
+ *                 endpoints:
+ *                   type: object
+ *                   description: Liste des endpoints disponibles
+ */
 // Route de test
 app.get('/', (req, res) => {
   res.json({
@@ -52,9 +92,63 @@ app.get('/', (req, res) => {
       images: {
         access: 'GET /uploads/products/:filename',
         uploadInfo: 'Formats supportés: JPEG, PNG, GIF, WebP. Taille max: 5MB par image, 5 images max par produit'
+      },
+      documentation: {
+        swagger: 'GET /api-docs - Documentation interactive Swagger UI',
+        swaggerJson: 'GET /api-docs.json - Spécification OpenAPI en JSON'
       }
     }
   });
+});
+
+/**
+ * @swagger
+ * /uploads/products/{filename}:
+ *   get:
+ *     summary: Accéder à une image de produit
+ *     description: Retourne le fichier image d'un produit
+ *     tags: [Images]
+ *     parameters:
+ *       - in: path
+ *         name: filename
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Nom du fichier image (ex uuid-timestamp.webp)
+ *         example: a1b2c3d4-1234567890-image.webp
+ *     responses:
+ *       200:
+ *         description: Image retournée avec succès
+ *         content:
+ *           image/webp:
+ *             schema:
+ *               type: string
+ *               format: binary
+ *           image/jpeg:
+ *             schema:
+ *               type: string
+ *               format: binary
+ *           image/png:
+ *             schema:
+ *               type: string
+ *               format: binary
+ *           image/gif:
+ *             schema:
+ *               type: string
+ *               format: binary
+ *       404:
+ *         description: Image non trouvée
+ *         content:
+ *           text/html:
+ *             schema:
+ *               type: string
+ *               example: Cannot GET /uploads/products/nonexistent.webp
+ */
+
+// Route pour servir la spécification OpenAPI en JSON
+app.get('/api-docs.json', (req, res) => {
+  res.setHeader('Content-Type', 'application/json');
+  res.send(specs);
 });
 
 // Middleware pour gérer les routes non trouvées

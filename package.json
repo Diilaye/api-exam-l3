@@ -8,7 +8,17 @@
     "dev": "nodemon server.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": ["nodejs", "express", "mongodb", "jwt", "api", "authentication", "upload", "images", "multer"],
+  "keywords": [
+    "nodejs",
+    "express",
+    "mongodb",
+    "jwt",
+    "api",
+    "authentication",
+    "upload",
+    "images",
+    "multer"
+  ],
   "author": "",
   "license": "ISC",
   "dependencies": {
@@ -22,6 +32,8 @@
     "multer": "^2.0.2",
     "path": "^0.12.7",
     "sharp": "^0.34.4",
+    "swagger-jsdoc": "^6.2.8",
+    "swagger-ui-express": "^5.0.1",
     "uuid": "^13.0.0"
   },
   "devDependencies": {

@@ -55,7 +55,26 @@ npm run dev
 npm start
 ```
 
-L'API sera disponible sur `http://localhost:3000`
+L'API sera disponible sur `http://localhost:4051`
+
+## 📖 Documentation Interactive
+
+L'API dispose d'une documentation interactive Swagger UI accessible à :
+- **Swagger UI** : `http://localhost:4051/api-docs`
+- **Spécification OpenAPI JSON** : `http://localhost:4051/api-docs.json`
+
+La documentation Swagger permet de :
+- ✅ Visualiser tous les endpoints disponibles
+- ✅ Tester directement les API depuis l'interface
+- ✅ Voir les schémas de données détaillés
+- ✅ Comprendre les codes de réponse et erreurs
+- ✅ Gérer l'authentification JWT directement
+
+### Comment utiliser Swagger UI :
+1. Aller sur `http://localhost:4051/api-docs`
+2. Pour les endpoints authentifiés, cliquer sur "Authorize" 🔒
+3. Entrer `Bearer <votre-token-jwt>` dans le champ Authorization
+4. Tester les endpoints en cliquant sur "Try it out"
 
 ## 📚 Endpoints de l'API
 
@@ -309,11 +328,11 @@ api-exam/
 
 - [ ] Tests unitaires et d'intégration
 - [x] Upload d'images pour les produits
+- [x] Documentation Swagger/OpenAPI interactive
 - [ ] Support de différents formats d'images (vidéos)
 - [ ] Système de commentaires et notes
 - [ ] Cache avec Redis
 - [ ] Rate limiting
-- [ ] Documentation Swagger/OpenAPI
 - [ ] Logs structurés
 - [ ] Monitoring et métriques
 - [ ] Compression d'images avancée

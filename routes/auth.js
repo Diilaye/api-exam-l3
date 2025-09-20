@@ -5,6 +5,47 @@ const User = require('../models/User');
 
 const router = express.Router();
 
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     LoginRequest:
+ *       type: object
+ *       required:
+ *         - email
+ *         - motDePasse
+ *       properties:
+ *         email:
+ *           type: string
+ *           format: email
+ *           example: jean.dupont@example.com
+ *         motDePasse:
+ *           type: string
+ *           format: password
+ *           example: motdepasse123
+ *     RegisterRequest:
+ *       type: object
+ *       required:
+ *         - nom
+ *         - email
+ *         - motDePasse
+ *       properties:
+ *         nom:
+ *           type: string
+ *           minLength: 2
+ *           maxLength: 50
+ *           example: Jean Dupont
+ *         email:
+ *           type: string
+ *           format: email
+ *           example: jean.dupont@example.com
+ *         motDePasse:
+ *           type: string
+ *           minLength: 6
+ *           format: password
+ *           example: motdepasse123
+ */
+
 // Fonction pour générer un token JWT
 const generateToken = (userId) => {
   return jwt.sign({ userId }, process.env.JWT_SECRET, {
@@ -12,9 +53,39 @@ const generateToken = (userId) => {
   });
 };
 
-// @route   POST /api/auth/register
-// @desc    Inscription d'un nouvel utilisateur
-// @access  Public
+/**
+ * @swagger
+ * /api/auth/register:
+ *   post:
+ *     summary: Inscription d'un nouvel utilisateur
+ *     description: Crée un nouveau compte utilisateur avec email et mot de passe
+ *     tags: [Authentification]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/RegisterRequest'
+ *     responses:
+ *       201:
+ *         description: Utilisateur créé avec succès
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/AuthResponse'
+ *       400:
+ *         description: Erreurs de validation ou utilisateur déjà existant
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       500:
+ *         description: Erreur serveur
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
 router.post('/register', [
   body('nom').trim().isLength({ min: 2 }).withMessage('Le nom doit contenir au moins 2 caractères'),
   body('email').isEmail().withMessage('Veuillez entrer un email valide'),
@@ -72,9 +143,45 @@ router.post('/register', [
   }
 });
 
-// @route   POST /api/auth/login
-// @desc    Connexion d'un utilisateur
-// @access  Public
+/**
+ * @swagger
+ * /api/auth/login:
+ *   post:
+ *     summary: Connexion d'un utilisateur
+ *     description: Authentifie un utilisateur et retourne un token JWT
+ *     tags: [Authentification]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/LoginRequest'
+ *     responses:
+ *       200:
+ *         description: Connexion réussie
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/AuthResponse'
+ *       400:
+ *         description: Erreurs de validation
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       401:
+ *         description: Email ou mot de passe incorrect
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       500:
+ *         description: Erreur serveur
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
 router.post('/login', [
   body('email').isEmail().withMessage('Veuillez entrer un email valide'),
   body('motDePasse').exists().withMessage('Le mot de passe est obligatoire')
@@ -133,9 +240,47 @@ router.post('/login', [
   }
 });
 
-// @route   GET /api/auth/profile
-// @desc    Obtenir le profil de l'utilisateur connecté
-// @access  Private
+/**
+ * @swagger
+ * /api/auth/profile:
+ *   get:
+ *     summary: Obtenir le profil de l'utilisateur connecté
+ *     description: Récupère les informations du profil de l'utilisateur authentifié
+ *     tags: [Authentification]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Profil récupéré avec succès
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 user:
+ *                   $ref: '#/components/schemas/UserResponse'
+ *       401:
+ *         description: Token manquant ou invalide
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       404:
+ *         description: Utilisateur non trouvé
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       500:
+ *         description: Erreur serveur
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
 router.get('/profile', require('../middleware/auth'), async (req, res) => {
   try {
     const user = await User.findById(req.user.userId);

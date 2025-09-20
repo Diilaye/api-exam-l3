@@ -6,9 +6,66 @@ const { upload, processImages, deleteImages, validateImageUpdate, handleMulterEr
 
 const router = express.Router();
 
-// @route   GET /api/products
-// @desc    Obtenir tous les produits (avec pagination et filtres)
-// @access  Public
+/**
+ * @swagger
+ * /api/products:
+ *   get:
+ *     summary: Obtenir tous les produits
+ *     description: Récupère la liste des produits avec pagination et filtres optionnels
+ *     tags: [Produits]
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           default: 1
+ *         description: Numéro de page
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           maximum: 50
+ *           default: 10
+ *         description: Nombre d'éléments par page
+ *       - in: query
+ *         name: categorie
+ *         schema:
+ *           type: string
+ *           enum: [electronique, vetements, maison, sport, livres, autre]
+ *         description: Filtrer par catégorie
+ *       - in: query
+ *         name: search
+ *         schema:
+ *           type: string
+ *         description: Recherche textuelle dans nom et description
+ *       - in: query
+ *         name: prixMin
+ *         schema:
+ *           type: number
+ *           minimum: 0
+ *         description: Prix minimum
+ *       - in: query
+ *         name: prixMax
+ *         schema:
+ *           type: number
+ *           minimum: 0
+ *         description: Prix maximum
+ *     responses:
+ *       200:
+ *         description: Liste des produits récupérée avec succès
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ProductListResponse'
+ *       500:
+ *         description: Erreur serveur
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
 router.get('/', async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
@@ -64,9 +121,51 @@ router.get('/', async (req, res) => {
   }
 });
 
-// @route   GET /api/products/user/me
-// @desc    Obtenir tous les produits de l'utilisateur connecté
-// @access  Private
+/**
+ * @swagger
+ * /api/products/user/me:
+ *   get:
+ *     summary: Obtenir mes produits
+ *     description: Récupère tous les produits de l'utilisateur connecté
+ *     tags: [Produits]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           default: 1
+ *         description: Numéro de page
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           maximum: 50
+ *           default: 10
+ *         description: Nombre d'éléments par page
+ *     responses:
+ *       200:
+ *         description: Produits de l'utilisateur récupérés avec succès
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ProductListResponse'
+ *       401:
+ *         description: Token manquant ou invalide
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       500:
+ *         description: Erreur serveur
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
 router.get('/user/me', auth, async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
@@ -103,9 +202,52 @@ router.get('/user/me', auth, async (req, res) => {
   }
 });
 
-// @route   GET /api/products/:id
-// @desc    Obtenir un produit par son ID
-// @access  Public
+/**
+ * @swagger
+ * /api/products/{id}:
+ *   get:
+ *     summary: Obtenir un produit par ID
+ *     description: Récupère les détails d'un produit spécifique
+ *     tags: [Produits]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: ID du produit (MongoDB ObjectId)
+ *     responses:
+ *       200:
+ *         description: Produit récupéré avec succès
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   $ref: '#/components/schemas/Product'
+ *       400:
+ *         description: ID de produit invalide
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       404:
+ *         description: Produit non trouvé
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       500:
+ *         description: Erreur serveur
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
 router.get('/:id', async (req, res) => {
   try {
     const product = await Product.findById(req.params.id)
@@ -139,9 +281,96 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-// @route   POST /api/products
-// @desc    Créer un nouveau produit
-// @access  Private
+/**
+ * @swagger
+ * /api/products:
+ *   post:
+ *     summary: Créer un nouveau produit
+ *     description: Crée un nouveau produit avec upload d'images optionnel (maximum 5 images)
+ *     tags: [Produits]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - nom
+ *               - description
+ *               - prix
+ *               - categorie
+ *             properties:
+ *               nom:
+ *                 type: string
+ *                 minLength: 2
+ *                 maxLength: 100
+ *                 description: Nom du produit
+ *                 example: iPhone 14 Pro
+ *               description:
+ *                 type: string
+ *                 minLength: 10
+ *                 maxLength: 500
+ *                 description: Description du produit
+ *                 example: Smartphone Apple avec puce A16 Bionic
+ *               prix:
+ *                 type: number
+ *                 minimum: 0
+ *                 description: Prix en euros
+ *                 example: 1199.99
+ *               categorie:
+ *                 type: string
+ *                 enum: [electronique, vetements, maison, sport, livres, autre]
+ *                 description: Catégorie du produit
+ *                 example: electronique
+ *               stock:
+ *                 type: integer
+ *                 minimum: 0
+ *                 description: Quantité en stock
+ *                 example: 15
+ *               images:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                   format: binary
+ *                 maxItems: 5
+ *                 description: Images du produit (JPEG, PNG, GIF, WebP - 5MB max chacune)
+ *     responses:
+ *       201:
+ *         description: Produit créé avec succès
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: Produit créé avec succès
+ *                 data:
+ *                   $ref: '#/components/schemas/Product'
+ *       400:
+ *         description: Erreurs de validation ou de fichier
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       401:
+ *         description: Token manquant ou invalide
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       500:
+ *         description: Erreur serveur
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
 router.post('/', auth, upload, processImages, [
   body('nom').trim().isLength({ min: 2 }).withMessage('Le nom doit contenir au moins 2 caractères'),
   body('description').trim().isLength({ min: 10 }).withMessage('La description doit contenir au moins 10 caractères'),
@@ -211,9 +440,170 @@ router.post('/', auth, upload, processImages, [
   }
 });
 
-// @route   PUT /api/products/:id
-// @desc    Modifier un produit
-// @access  Private (propriétaire seulement)
+/**
+ * @swagger
+ * /api/products/{id}:
+ *   put:
+ *     summary: Modifier un produit
+ *     description: Met à jour un produit existant avec gestion intelligente des images (propriétaire seulement)
+ *     tags: [Produits]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: ID du produit à modifier
+ *     requestBody:
+ *       required: false
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               nom:
+ *                 type: string
+ *                 minLength: 2
+ *                 maxLength: 100
+ *                 description: Nouveau nom du produit
+ *                 example: iPhone 14 Pro Max
+ *               description:
+ *                 type: string
+ *                 minLength: 10
+ *                 maxLength: 500
+ *                 description: Nouvelle description
+ *                 example: Version améliorée avec écran plus grand
+ *               prix:
+ *                 type: number
+ *                 minimum: 0
+ *                 description: Nouveau prix
+ *                 example: 1399.99
+ *               categorie:
+ *                 type: string
+ *                 enum: [electronique, vetements, maison, sport, livres, autre]
+ *                 description: Nouvelle catégorie
+ *               stock:
+ *                 type: integer
+ *                 minimum: 0
+ *                 description: Nouveau stock
+ *                 example: 8
+ *               images:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                   format: binary
+ *                 maxItems: 5
+ *                 description: Nouvelles images à ajouter
+ *               keepImages:
+ *                 type: string
+ *                 description: JSON array des noms de fichiers à conserver
+ *                 example: '["filename1.webp", "filename2.webp"]'
+ *     responses:
+ *       200:
+ *         description: Produit mis à jour avec succès
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: Produit mis à jour avec succès
+ *                 data:
+ *                   $ref: '#/components/schemas/Product'
+ *       400:
+ *         description: Erreurs de validation ou ID invalide
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       401:
+ *         description: Token manquant ou invalide
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       403:
+ *         description: Accès refusé (pas propriétaire)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       404:
+ *         description: Produit non trouvé
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       500:
+ *         description: Erreur serveur
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *   delete:
+ *     summary: Supprimer un produit
+ *     description: Supprime un produit et toutes ses images (propriétaire seulement)
+ *     tags: [Produits]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: ID du produit à supprimer
+ *     responses:
+ *       200:
+ *         description: Produit supprimé avec succès
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: Produit supprimé avec succès
+ *       400:
+ *         description: ID de produit invalide
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       401:
+ *         description: Token manquant ou invalide
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       403:
+ *         description: Accès refusé (pas propriétaire)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       404:
+ *         description: Produit non trouvé
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       500:
+ *         description: Erreur serveur
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
 router.put('/:id', auth, upload, validateImageUpdate, processImages, [
   body('nom').optional().trim().isLength({ min: 2 }).withMessage('Le nom doit contenir au moins 2 caractères'),
   body('description').optional().trim().isLength({ min: 10 }).withMessage('La description doit contenir au moins 10 caractères'),
@@ -348,9 +738,6 @@ router.put('/:id', auth, upload, validateImageUpdate, processImages, [
   }
 });
 
-// @route   DELETE /api/products/:id
-// @desc    Supprimer un produit
-// @access  Private (propriétaire seulement)
 router.delete('/:id', auth, async (req, res) => {
   try {
     // Trouver le produit
