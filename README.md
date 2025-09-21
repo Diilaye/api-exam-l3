@@ -12,6 +12,8 @@ Une API REST simple développée avec Node.js, Express et MongoDB pour gérer l'
 - **Validation** : Validation des données avec express-validator
 - **Sécurité** : Hachage des mots de passe avec bcrypt
 - **Pagination** : Support de la pagination pour les listes de produits
+- **CORS** : Configuration CORS avancée pour le développement et la production
+- **Documentation** : API documentée avec Swagger UI
 
 ## 📋 Prérequis
 
@@ -35,10 +37,12 @@ npm install
 3. Configurer les variables d'environnement :
 Créer un fichier `.env` à la racine du projet :
 ```env
-PORT=3000
+PORT=4051
 MONGODB_URI=mongodb://localhost:27017/api-exam
 JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
 JWT_EXPIRE=7d
+NODE_ENV=development
+CORS_ORIGIN=http://localhost:3000,http://localhost:3001
 ```
 
 4. Démarrer MongoDB (si local) :
@@ -75,6 +79,58 @@ La documentation Swagger permet de :
 2. Pour les endpoints authentifiés, cliquer sur "Authorize" 🔒
 3. Entrer `Bearer <votre-token-jwt>` dans le champ Authorization
 4. Tester les endpoints en cliquant sur "Try it out"
+
+## 🌐 Configuration CORS
+
+L'API est configurée avec **CORS ouvert** pour autoriser **tous les origins**.
+
+### ✅ Origines Autorisées
+- ✅ **TOUS les origins** (localhost, domaines externes, etc.)
+- ✅ `http://localhost:3000`, `3001`, `8080`, etc. (tous les ports)
+- ✅ `https://example.com`, `https://monsite.fr`, etc. (tous les domaines)
+- ✅ Applications mobiles et extensions navigateur
+- ✅ Postman et autres outils de test
+
+### ⚠️ Note de Sécurité
+**Configuration actuelle : PERMISSIVE (tous les origins autorisés)**
+- ✅ Parfait pour le développement
+- ⚠️ **Attention en production** - Voir `CORS_ALL_ORIGINS.md` pour sécuriser
+
+### 🔧 Configuration Côté Client
+
+#### Fetch API
+```javascript
+fetch('http://localhost:4051/api/products', {
+  method: 'GET',
+  credentials: 'include', // Important pour CORS
+  headers: {
+    'Content-Type': 'application/json',
+    'Authorization': 'Bearer your-token-here'
+  }
+})
+```
+
+#### Axios
+```javascript
+// Configuration globale
+axios.defaults.withCredentials = true;
+axios.defaults.baseURL = 'http://localhost:4051';
+
+// Requête avec token
+axios.get('/api/products', {
+  headers: { 'Authorization': 'Bearer your-token' }
+});
+```
+
+### 🧪 Test CORS
+Un fichier de test est disponible : `http://localhost:3000/cors-test.html`
+(Nécessite de lancer un serveur web sur le port 3000)
+
+### 🚨 Résolution de Problèmes
+Si vous rencontrez des erreurs CORS :
+1. Vérifiez que `NODE_ENV=development` dans votre `.env`
+2. Consultez le guide complet : `CORS_TROUBLESHOOTING.md`
+3. Utilisez les logs de debug qui s'affichent dans la console
 
 ## 📚 Endpoints de l'API
 
